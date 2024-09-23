@@ -1,4 +1,4 @@
-package com.aishik212.merabillstest.models;
+package com.aishik212.merabillstest.models.enums;
 
 public enum PaymentType {
     CASH("Cash"),

@@ -8,16 +8,6 @@
     android:orientation="vertical"
     android:padding="16dp">
 
-    <TextView
-        android:id="@+id/textView3"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:layout_marginTop="5dp"
-        android:layout_marginBottom="5dp"
-        android:text="@string/add_payment"
-        android:textSize="16sp"
-        android:textStyle="bold" />
-
     <!-- Amount Input -->
     <EditText
         android:id="@+id/amountEt"
@@ -26,7 +16,8 @@
         android:layout_marginTop="5dp"
         android:layout_marginBottom="5dp"
         android:hint="₹ Amount"
-        android:inputType="numberDecimal" />
+        android:inputType="numberDecimal"
+        android:maxLength="10" />
 
     <!-- Payment Type Spinner -->
     <Spinner
@@ -42,6 +33,7 @@
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:hint="Provider (ICICI, Citibank, etc.)"
+        android:singleLine="true"
         android:visibility="gone"
         tools:visibility="visible" />
 
@@ -51,6 +43,7 @@
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:hint="Transaction reference"
+        android:singleLine="true"
         android:visibility="gone"
         tools:visibility="visible" />
 

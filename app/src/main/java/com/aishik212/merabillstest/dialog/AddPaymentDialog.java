@@ -1,5 +1,7 @@
 package com.aishik212.merabillstest.dialog;
 
+import static com.aishik212.merabillstest.Constants.TAG_ERROR;
+
 import android.app.Dialog;
 import android.content.Context;
 import android.os.Bundle;
@@ -15,7 +17,8 @@ import androidx.annotation.NonNull;
 
 import com.aishik212.merabillstest.databinding.DialogAddPaymentBinding;
 import com.aishik212.merabillstest.interfaces.OnPaymentAddedListener;
-import com.aishik212.merabillstest.models.PaymentType;
+import com.aishik212.merabillstest.models.PaymentDetailsModel;
+import com.aishik212.merabillstest.models.enums.PaymentType;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -23,10 +26,10 @@ import java.util.List;
 
 public class AddPaymentDialog extends Dialog {
 
-    private final ArrayList<PaymentType> addedList = new ArrayList<>();
+    private final List<PaymentType> addedList = new ArrayList<>();
     private final OnPaymentAddedListener listener; // Callback listener
-    List<PaymentType> values;
-    ArrayAdapter<PaymentType> adapter;
+    private List<PaymentType> values;
+    private ArrayAdapter<PaymentType> adapter;
     private EditText editTextAmount;
     private EditText editTextProvider;
     private EditText editTextTransId;
@@ -47,6 +50,7 @@ public class AddPaymentDialog extends Dialog {
         super.onCreate(savedInstanceState);
         inflate = DialogAddPaymentBinding.inflate(getLayoutInflater());
         setContentView(inflate.getRoot());
+        setTitle("Add Payment");
         initViews();
     }
 
@@ -66,7 +70,8 @@ public class AddPaymentDialog extends Dialog {
         paymentTypeSpinner.setOnItemSelectedListener(new AdapterView.OnItemSelectedListener() {
             @Override
             public void onItemSelected(AdapterView<?> parent, View view, int position, long id) {
-                if (position != -1 && !values.isEmpty()) {
+                boolean b = position != -1 && !values.isEmpty();
+                if (b) {
                     updateTextFields(values.get(position));
                 }
             }
@@ -74,7 +79,8 @@ public class AddPaymentDialog extends Dialog {
             @Override
             public void onNothingSelected(AdapterView<?> parent) {
                 int position = paymentTypeSpinner.getSelectedItemPosition();
-                if (position != -1 && !values.isEmpty()) {
+                boolean b = position != -1 && !values.isEmpty();
+                if (b) {
                     updateTextFields(values.get(position));
                 }
             }
@@ -104,7 +110,9 @@ public class AddPaymentDialog extends Dialog {
                 }
             }
 
-            listener.onPaymentAdded(getAmount(), selectedPaymentType, getProvider(), getTransID());
+            PaymentDetailsModel paymentDetailsModel = new PaymentDetailsModel(selectedPaymentType.getDisplayName(), Double.parseDouble(getAmount()), getProvider(), getTransID(), selectedPaymentType);
+
+            listener.onPaymentAdded(paymentDetailsModel);
 
             updateUI(selectedPaymentType);
 
@@ -125,7 +133,6 @@ public class AddPaymentDialog extends Dialog {
     }
 
     private void updateTextFields(PaymentType position) {
-        Log.d("texts", "updateTextFields: " + position);
         inflate.providerEt.setText("");
         inflate.transactionRefEt.setText("");
         if (position != PaymentType.CASH) {
@@ -144,18 +151,12 @@ public class AddPaymentDialog extends Dialog {
                 editTextTransId.setText(transId);
             }
         } catch (Exception e) {
-            Log.d("ERROR", "setAmount: " + e.getLocalizedMessage());
+            Log.d(TAG_ERROR, "setTransId: " + e.getLocalizedMessage());
         }
     }
 
     public String getAmount() {
-        try {
-            amt = editTextAmount.getText().toString();
-
-        } catch (Exception e) {
-            Log.d("ERROR", "getAmount: " + e.getLocalizedMessage());
-        }
-        return amt;
+        return editTextAmount != null ? editTextAmount.getText().toString() : amt;
     }
 
     public void setAmount(String amount) {
@@ -165,30 +166,19 @@ public class AddPaymentDialog extends Dialog {
                 editTextAmount.setText(amount);
             }
         } catch (Exception e) {
-            Log.d("ERROR", "setAmount: " + e.getLocalizedMessage());
+            Log.d(TAG_ERROR, "setAmount: " + e.getLocalizedMessage());
         }
     }
 
     public int getPaymentTypeIndex() {
-        try {
-            index = paymentTypeSpinner.getSelectedItemPosition();
-        } catch (Exception e) {
-            Log.d("ERROR", "getPaymentTypeIndex: " + e.getLocalizedMessage());
-        }
-        return index;
+        return paymentTypeSpinner != null ? paymentTypeSpinner.getSelectedItemPosition() : index;
     }
-
     public void setPaymentTypeIndex(int index) {
         this.index = index;
     }
 
     public String getProvider() {
-        try {
-            provider = editTextProvider.getText().toString();
-        } catch (Exception e) {
-            Log.d("ERROR", "getProvider: " + e.getLocalizedMessage());
-        }
-        return provider;
+        return editTextProvider != null ? editTextProvider.getText().toString() : provider;
     }
 
     public void setProvider(String provider) {
@@ -198,25 +188,18 @@ public class AddPaymentDialog extends Dialog {
                 editTextProvider.setText(provider);
             }
         } catch (Exception e) {
-            Log.d("ERROR", "setAmount: " + e.getLocalizedMessage());
+            Log.d(TAG_ERROR, "setProvider: " + e.getLocalizedMessage());
         }
     }
 
     public String getTransID() {
-        try {
-            transId = editTextTransId.getText().toString();
-        } catch (Exception e) {
-            Log.d("ERROR", "getTransID: " + e.getLocalizedMessage());
-        }
-        return transId;
+        return editTextTransId != null ? editTextTransId.getText().toString() : transId;
     }
 
     public void removeFromList(PaymentType selectedPaymentType) {
-        try {
+        if (!addedList.contains(selectedPaymentType)) {
             addedList.add(selectedPaymentType);
             updateValuesVariable();
-        } catch (Exception e) {
-            Log.d("ERROR", "removeFromList: " + e.getLocalizedMessage());
         }
     }
 
@@ -225,15 +208,14 @@ public class AddPaymentDialog extends Dialog {
             addedList.remove(selectedPaymentType);
             updateValuesVariable();
         } catch (Exception e) {
-            Log.d("ERROR", "removeFromList: " + e.getLocalizedMessage());
+            Log.d(TAG_ERROR, "removeFromList: " + e.getLocalizedMessage());
         }
     }
 
     private void updateValuesVariable() {
         values = new ArrayList<>(Arrays.asList(PaymentType.values()));
-        for (PaymentType p : addedList) {
-            values.remove(p);
-        }
+        values.removeAll(addedList);  // Remove already added PaymentTypes
+
         try {
             adapter.clear();
             adapter.addAll(values);
@@ -244,7 +226,7 @@ public class AddPaymentDialog extends Dialog {
             }
 
         } catch (Exception e) {
-            Log.d("ERROR", "updateValuesVariable: " + e.getLocalizedMessage());
+            Log.d(TAG_ERROR, "updateValuesVariable: " + e.getLocalizedMessage());
         }
     }
 }

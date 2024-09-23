@@ -4,29 +4,35 @@ import static com.aishik212.merabillstest.Constants.AMOUNT_KEY;
 import static com.aishik212.merabillstest.Constants.DIALOG_VISIBLE_KEY;
 import static com.aishik212.merabillstest.Constants.PAYMENT_TYPE_KEY;
 import static com.aishik212.merabillstest.Constants.PROVIDER_KEY;
+import static com.aishik212.merabillstest.Constants.TAG_ERROR;
 import static com.aishik212.merabillstest.Constants.TRANS_KEY;
 
+import android.content.res.ColorStateList;
+import android.graphics.Color;
 import android.os.Bundle;
 import android.util.Log;
 import android.view.View;
+import android.view.ViewGroup;
+import android.widget.LinearLayout;
+import android.widget.Toast;
 
 import androidx.activity.EdgeToEdge;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.graphics.Insets;
 import androidx.core.view.ViewCompat;
 import androidx.core.view.WindowInsetsCompat;
+import androidx.lifecycle.LiveData;
 import androidx.lifecycle.ViewModelProvider;
 
 import com.aishik212.merabillstest.databinding.ActivityMainBinding;
 import com.aishik212.merabillstest.dialog.AddPaymentDialog;
 import com.aishik212.merabillstest.interfaces.OnPaymentAddedListener;
-import com.aishik212.merabillstest.models.Payment;
-import com.aishik212.merabillstest.models.PaymentType;
+import com.aishik212.merabillstest.models.PaymentDetailsModel;
+import com.aishik212.merabillstest.utils.PaymentManager;
 import com.aishik212.merabillstest.viewmodel.MainViewModel;
 import com.google.android.material.chip.Chip;
 import com.google.android.material.chip.ChipGroup;
 
-import java.text.DecimalFormat;
 import java.util.List;
 import java.util.Locale;
 
@@ -35,7 +41,6 @@ public class MainActivity extends AppCompatActivity implements OnPaymentAddedLis
     private ActivityMainBinding binding = null;
     private MainViewModel viewModel;
     private ChipGroup paymentsChipGroup;
-    private double sum = 0;
     private AddPaymentDialog addPaymentDialog = null;
     private boolean isDialogVisible = false;
 
@@ -50,6 +55,10 @@ public class MainActivity extends AppCompatActivity implements OnPaymentAddedLis
             v.setPadding(systemBars.left, systemBars.top, systemBars.right, systemBars.bottom);
             return insets;
         });
+
+        viewModel = new ViewModelProvider(this).get(MainViewModel.class);
+
+        initViews();
         if (savedInstanceState != null) {
             isDialogVisible = savedInstanceState.getBoolean(DIALOG_VISIBLE_KEY, false);
             if (isDialogVisible) {
@@ -59,28 +68,39 @@ public class MainActivity extends AppCompatActivity implements OnPaymentAddedLis
                 String provider = savedInstanceState.getString(PROVIDER_KEY, addPaymentDialog.getProvider());
                 showPaymentDialog(savedAmount, savedPaymentTypeIndex, transId, provider);// Re-show dialog after rotation
             }
+        } else {
+            getOldData();
         }
-
-        viewModel = new ViewModelProvider(this).get(MainViewModel.class);
-
-        initViews();
         observeViewModel();
+    }
 
+    private void getOldData() {
+        viewModel.loadPayments(this);
     }
 
     private void initViews() {
         if (binding != null) {
+            if (addPaymentDialog == null) {
+                addPaymentDialog = new AddPaymentDialog(this, this);
+            }
+
             paymentsChipGroup = binding.paymentsChipGroup;
+
             binding.addPaymentBtn.setOnClickListener(v -> showPaymentDialog("", 0, "", ""));
 
-            binding.saveBtn.setOnClickListener(v -> viewModel.savePayments());
+            binding.saveBtn.setOnClickListener(v -> {
+                LiveData<List<PaymentDetailsModel>> payments = viewModel.getPayments();
+                if (payments != null && payments.getValue() != null) {
+                    PaymentManager.saveDetailsToFile(this, payments.getValue());
+                    Toast.makeText(this, "Data Saved", Toast.LENGTH_SHORT).show();
+                } else {
+                    Toast.makeText(this, "Unable to save", Toast.LENGTH_SHORT).show();
+                }
+            });
         }
     }
 
     private void showPaymentDialog(String amount, int paymentTypeIndex, String transId, String provider) {
-        if (addPaymentDialog == null) {
-            addPaymentDialog = new AddPaymentDialog(this, this);
-        }
 
         addPaymentDialog.setAmount(amount);
         addPaymentDialog.setPaymentTypeIndex(paymentTypeIndex);
@@ -91,51 +111,61 @@ public class MainActivity extends AppCompatActivity implements OnPaymentAddedLis
         isDialogVisible = true;
     }
 
-    private void addPaymentChip(PaymentType paymentType, String amount, String provider, String transID) {
-        if (paymentsChipGroup != null) {
-            Chip chip = new Chip(this);
-            chip.setText(paymentType.toString() + " = ₹" + amount);
-            chip.setCloseIconVisible(true);
-            double sum = 0.0;
-            try {
-                sum = Double.parseDouble(amount);
-            } catch (Exception e) {
-                Log.d("ERROR", "addPaymentChip: " + e.getLocalizedMessage());
-            }
-
-            Payment payment = new Payment(paymentType.toString(), sum, provider, transID);
-            chip.setOnCloseIconClickListener(v -> {
-                paymentsChipGroup.removeView(chip);
-                viewModel.removePayment(payment);
-                addPaymentDialog.addToList(paymentType);
-            }); // Remove chip on close icon click
-            paymentsChipGroup.addView(chip);
-            viewModel.addPayment(payment);
-        }
-    }
 
     private void observeViewModel() {
         viewModel.getPayments().observe(this, this::observePayments);
+        viewModel.getPaymentSum().observe(this, this::observePaymentSum);
+
     }
 
-    private void observePayments(List<Payment> payments) {
-        sum = 0.0;
-        for (Payment s : payments) {
-            sum += s.getAmount();
-        }
-        DecimalFormat decimalFormat = new DecimalFormat("#.00");
-        String formattedSum = decimalFormat.format(sum);
+    private void observePaymentSum(Double sum) {
         if (sum == 0) {
             binding.amountTv.setText("₹0.0");
         } else {
-            binding.amountTv.setText(String.format(Locale.getDefault(), "₹%s", formattedSum));
+            binding.amountTv.setText(String.format(Locale.getDefault(), "₹%s", sum));
         }
-        if (payments.size() >= 3) {
+    }
+
+    private void observePayments(List<PaymentDetailsModel> paymentDetailsModels) {
+        try {
+            paymentsChipGroup.removeAllViews();
+        } catch (Exception e) {
+            Log.d(TAG_ERROR, "observePayments: " + e.getLocalizedMessage());
+        }
+        for (PaymentDetailsModel s : paymentDetailsModels) {
+            addPaymentDialog.removeFromList(s.getType());
+            addPaymentChip(s);
+        }
+        if (paymentDetailsModels.size() >= 3) {
             binding.addPaymentBtn.setVisibility(View.GONE);
         } else {
             binding.addPaymentBtn.setVisibility(View.VISIBLE);
         }
     }
+
+    private void addPaymentChip(PaymentDetailsModel paymentDetailsModel) {
+        if (paymentsChipGroup != null) {
+            Chip chip = new Chip(this);
+            double amount = paymentDetailsModel.getAmount();
+            chip.setText(paymentDetailsModel.getLabel() + " = ₹" + amount);
+            chip.setTextSize(16F);
+            chip.setShapeAppearanceModel(chip.getShapeAppearanceModel().withCornerSize(50F));
+            ColorStateList chipBackgroundColor = ColorStateList.valueOf(Color.parseColor("#e0e0e0"));
+            chip.setChipStrokeColor(chipBackgroundColor);
+            chip.setChipBackgroundColor(chipBackgroundColor);
+            chip.setCloseIconVisible(true);
+            LinearLayout.LayoutParams params = new LinearLayout.LayoutParams(ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT);
+            chip.setLayoutParams(params);
+            params.setMargins(3, 0, 3, 0);
+            chip.setOnCloseIconClickListener(v -> {
+                paymentsChipGroup.removeView(chip);
+                viewModel.removePayment(paymentDetailsModel);
+                addPaymentDialog.addToList(paymentDetailsModel.getType());
+            }); // Remove chip on close icon click
+            paymentsChipGroup.addView(chip);
+        }
+    }
+
 
     @Override
     protected void onStop() {
@@ -162,7 +192,7 @@ public class MainActivity extends AppCompatActivity implements OnPaymentAddedLis
     }
 
     @Override
-    public void onPaymentAdded(String amount, PaymentType paymentType, String provider, String transID) {
-        addPaymentChip(paymentType, amount, provider, transID);
+    public void onPaymentAdded(PaymentDetailsModel paymentDetailsModel) {
+        viewModel.addPayment(paymentDetailsModel);
     }
 }

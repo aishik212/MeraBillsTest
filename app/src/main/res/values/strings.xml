@@ -2,7 +2,7 @@
     <string name="app_name">Merabills Test</string>
     <string name="add_payment"><u>Add Payment</u></string>
     <string name="save">Save</string>
-    <string name="payments">Payments</string>
+    <string name="paymentDetailsModels">Payments</string>
     <string name="total_amount">Total Amount = </string>
     <string name="_0">₹0</string>
 </resources>
