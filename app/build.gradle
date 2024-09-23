@@ -3,6 +3,14 @@ plugins {
 }
 
 android {
+    signingConfigs {
+        release {
+            storeFile file('C:\\Users\\kirtu\\AndroidStudioProjects\\GoldenTechnolgies\\MerabillsTest\\abcdefghijkl.jks')
+            storePassword 'abcdefghijkl'
+            keyAlias 'abcdefghijkl'
+            keyPassword 'abcdefghijkl'
+        }
+    }
     namespace 'com.aishik212.merabillstest'
     compileSdk 34
 
@@ -20,6 +28,7 @@ android {
         release {
             minifyEnabled false
             proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
+            signingConfig signingConfigs.release
         }
     }
     compileOptions {
