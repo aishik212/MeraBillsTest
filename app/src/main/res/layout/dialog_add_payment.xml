@@ -1,0 +1,83 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:layout_gravity="center"
+    android:gravity="center"
+    android:orientation="vertical"
+    android:padding="16dp">
+
+    <TextView
+        android:id="@+id/textView3"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="5dp"
+        android:layout_marginBottom="5dp"
+        android:text="@string/add_payment"
+        android:textSize="16sp"
+        android:textStyle="bold" />
+
+    <!-- Amount Input -->
+    <EditText
+        android:id="@+id/amountEt"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="5dp"
+        android:layout_marginBottom="5dp"
+        android:hint="₹ Amount"
+        android:inputType="numberDecimal" />
+
+    <!-- Payment Type Spinner -->
+    <Spinner
+        android:id="@+id/paymentTypeSpinner"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="5dp"
+        android:layout_marginBottom="5dp" />
+
+    <!-- Provider EditText (Initially Hidden) -->
+    <EditText
+        android:id="@+id/providerEt"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:hint="Provider (ICICI, Citibank, etc.)"
+        android:visibility="gone"
+        tools:visibility="visible" />
+
+    <!-- Transaction Reference EditText (Initially Hidden) -->
+    <EditText
+        android:id="@+id/transactionRefEt"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:hint="Transaction reference"
+        android:visibility="gone"
+        tools:visibility="visible" />
+
+    <!-- Buttons for OK and Cancel -->
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="5dp"
+        android:layout_marginBottom="5dp"
+        android:gravity="end"
+        android:orientation="horizontal">
+
+        <Button
+            android:id="@+id/cancelBtn"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="CANCEL" />
+
+        <Space
+            android:layout_width="16dp"
+            android:layout_height="wrap_content" />
+
+        <Button
+            android:id="@+id/okBtn"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="OK" />
+    </LinearLayout>
+
+</LinearLayout>
