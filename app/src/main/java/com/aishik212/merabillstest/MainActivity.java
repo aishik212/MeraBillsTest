@@ -91,8 +91,12 @@ public class MainActivity extends AppCompatActivity implements OnPaymentAddedLis
             binding.saveBtn.setOnClickListener(v -> {
                 LiveData<List<PaymentDetailsModel>> payments = viewModel.getPayments();
                 if (payments != null && payments.getValue() != null) {
-                    PaymentManager.saveDetailsToFile(this, payments.getValue());
-                    Toast.makeText(this, "Data Saved", Toast.LENGTH_SHORT).show();
+                    if (!payments.getValue().isEmpty()) {
+                        PaymentManager.saveDetailsToFile(this, payments.getValue());
+                        Toast.makeText(this, "Data saved", Toast.LENGTH_SHORT).show();
+                    } else {
+                        Toast.makeText(this, "Nothing to save", Toast.LENGTH_SHORT).show();
+                    }
                 } else {
                     Toast.makeText(this, "Unable to save", Toast.LENGTH_SHORT).show();
                 }

@@ -95,6 +95,17 @@ public class AddPaymentDialog extends Dialog {
                 Toast.makeText(getContext(), "Please enter an amount", Toast.LENGTH_SHORT).show();
                 return;
             }
+            double amount1 = 0.0;
+            try {
+                amount1 = Double.parseDouble(getAmount());
+                if (amount1 <= 0) {
+                    Toast.makeText(getContext(), "Please enter an amount greater than 0", Toast.LENGTH_SHORT).show();
+                    return;
+                }
+            } catch (Exception e) {
+                Toast.makeText(getContext(), "Incorrect amount provided", Toast.LENGTH_SHORT).show();
+                return;
+            }
             int position = paymentTypeSpinner.getSelectedItemPosition();
             PaymentType paymentType = values.get(position);
 
@@ -110,7 +121,7 @@ public class AddPaymentDialog extends Dialog {
                 }
             }
 
-            PaymentDetailsModel paymentDetailsModel = new PaymentDetailsModel(selectedPaymentType.getDisplayName(), Double.parseDouble(getAmount()), getProvider(), getTransID(), selectedPaymentType);
+            PaymentDetailsModel paymentDetailsModel = new PaymentDetailsModel(selectedPaymentType.getDisplayName(), amount1, getProvider(), getTransID(), selectedPaymentType);
 
             listener.onPaymentAdded(paymentDetailsModel);
 
@@ -173,6 +184,7 @@ public class AddPaymentDialog extends Dialog {
     public int getPaymentTypeIndex() {
         return paymentTypeSpinner != null ? paymentTypeSpinner.getSelectedItemPosition() : index;
     }
+
     public void setPaymentTypeIndex(int index) {
         this.index = index;
     }
